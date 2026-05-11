@@ -17,6 +17,7 @@ function UsersPage() {
   const [rows, setRows] = useState<RoleRow[]>([]);
   const [open, setOpen] = useState(false);
   const [pwTarget, setPwTarget] = useState<RoleRow | null>(null);
+  const [selfPwOpen, setSelfPwOpen] = useState(false);
 
   if (!loading && !isSuperAdmin) {
     throw redirect({ to: "/admin" });
