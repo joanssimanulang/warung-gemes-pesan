@@ -66,9 +66,14 @@ function UsersPage() {
           <h1 className="text-xl font-bold">Manajemen Pengguna</h1>
           <p className="text-xs text-muted-foreground">Hanya Super Admin yang dapat mengelola akun.</p>
         </div>
-        <button onClick={() => setOpen(true)} className="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">
-          <Plus className="h-4 w-4" /> Tambah Admin
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setSelfPwOpen(true)} className="flex items-center gap-1 rounded-full bg-secondary px-3 py-2 text-xs font-bold">
+            <KeyRound className="h-4 w-4" /> Password Saya
+          </button>
+          <button onClick={() => setOpen(true)} className="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">
+            <Plus className="h-4 w-4" /> Tambah Admin
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-2">
