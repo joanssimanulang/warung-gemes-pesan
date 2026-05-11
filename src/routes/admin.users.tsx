@@ -17,6 +17,7 @@ function UsersPage() {
   const [rows, setRows] = useState<RoleRow[]>([]);
   const [open, setOpen] = useState(false);
   const [pwTarget, setPwTarget] = useState<RoleRow | null>(null);
+  const [selfPwOpen, setSelfPwOpen] = useState(false);
 
   if (!loading && !isSuperAdmin) {
     throw redirect({ to: "/admin" });
@@ -65,9 +66,14 @@ function UsersPage() {
           <h1 className="text-xl font-bold">Manajemen Pengguna</h1>
           <p className="text-xs text-muted-foreground">Hanya Super Admin yang dapat mengelola akun.</p>
         </div>
-        <button onClick={() => setOpen(true)} className="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">
-          <Plus className="h-4 w-4" /> Tambah Admin
-        </button>
+        <div className="flex gap-2">
+          <button onClick={() => setSelfPwOpen(true)} className="flex items-center gap-1 rounded-full bg-secondary px-3 py-2 text-xs font-bold">
+            <KeyRound className="h-4 w-4" /> Password Saya
+          </button>
+          <button onClick={() => setOpen(true)} className="flex items-center gap-1 rounded-full bg-primary px-4 py-2 text-xs font-bold text-primary-foreground">
+            <Plus className="h-4 w-4" /> Tambah Admin
+          </button>
+        </div>
       </div>
 
       <div className="grid gap-2">
@@ -92,6 +98,42 @@ function UsersPage() {
 
       {open && <CreateAdminModal onClose={() => setOpen(false)} onCreated={() => { setOpen(false); load(); }} call={callWithAuth} />}
       {pwTarget && <ChangePwModal target={pwTarget} onClose={() => setPwTarget(null)} call={callWithAuth} />}
+      {selfPwOpen && <SelfPwModal onClose={() => setSelfPwOpen(false)} />}
+    </div>
+  );
+}
+
+function SelfPwModal({ onClose }: { onClose: () => void }) {
+  const [password, setPassword] = useState("");
+  const [confirm, setConfirm] = useState("");
+  const [loading, setLoading] = useState(false);
+  const submit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (password !== confirm) { toast.error("Konfirmasi password tidak cocok"); return; }
+    setLoading(true);
+    try {
+      const { error } = await supabase.auth.updateUser({ password });
+      if (error) throw error;
+      toast.success("Password Anda berhasil diperbarui");
+      onClose();
+    } catch (e: any) { toast.error(e?.message ?? "Gagal"); }
+    finally { setLoading(false); }
+  };
+  return (
+    <div className="fixed inset-0 z-50 flex items-end justify-center bg-black/50 sm:items-center" onClick={onClose}>
+      <div className="w-full max-w-md rounded-t-3xl bg-card p-5 sm:rounded-3xl" onClick={(e) => e.stopPropagation()}>
+        <div className="mb-3 flex items-center justify-between">
+          <h2 className="text-lg font-bold">Ubah Password Saya</h2>
+          <button onClick={onClose}><X className="h-5 w-5" /></button>
+        </div>
+        <form onSubmit={submit} className="space-y-3">
+          <input required type="password" minLength={8} value={password} onChange={(e) => setPassword(e.target.value)} placeholder="Password baru (min 8 karakter)" className="w-full rounded-2xl border border-input bg-background px-4 py-3 outline-none focus:border-primary" />
+          <input required type="password" minLength={8} value={confirm} onChange={(e) => setConfirm(e.target.value)} placeholder="Konfirmasi password baru" className="w-full rounded-2xl border border-input bg-background px-4 py-3 outline-none focus:border-primary" />
+          <button type="submit" disabled={loading} className="w-full rounded-full bg-primary py-3 text-sm font-bold text-primary-foreground disabled:opacity-60">
+            {loading ? "Menyimpan…" : "Simpan Password Baru"}
+          </button>
+        </form>
+      </div>
     </div>
   );
 }
