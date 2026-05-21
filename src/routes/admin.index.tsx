@@ -13,11 +13,14 @@ interface Order {
   id: string;
   customer_name: string;
   whatsapp: string;
-  table_number: string;
+  table_number: string | null;
   total_price: number;
   status: "menunggu" | "diproses" | "selesai";
   payment_status: string;
   created_at: string;
+  location_type: "kantin" | "ruangan";
+  room_id: string | null;
+  rooms?: { name: string; building: string | null; floor: string | null } | null;
 }
 interface Item {
   id: string;

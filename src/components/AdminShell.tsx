@@ -1,6 +1,6 @@
 import { Link, Outlet, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useAuth } from "@/lib/auth";
-import { LayoutDashboard, ShoppingBag, Utensils, BarChart3, Users, LogOut, Menu as MenuIcon, X } from "lucide-react";
+import { LayoutDashboard, ShoppingBag, Utensils, BarChart3, Users, LogOut, Menu as MenuIcon, X, MapPin } from "lucide-react";
 import { useState } from "react";
 
 export function AdminShell() {
@@ -12,6 +12,7 @@ export function AdminShell() {
   const links = [
     { to: "/admin", label: "Pesanan", icon: ShoppingBag },
     { to: "/admin/menus", label: "Menu", icon: Utensils },
+    { to: "/admin/locations", label: "Lokasi", icon: MapPin },
     { to: "/admin/analytics", label: "Analitik", icon: BarChart3 },
     ...(isSuperAdmin ? [{ to: "/admin/users", label: "Pengguna", icon: Users }] : []),
   ];
