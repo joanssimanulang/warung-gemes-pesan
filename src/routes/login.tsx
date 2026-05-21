@@ -1,5 +1,5 @@
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
 import { UtensilsCrossed } from "lucide-react";
 import { toast } from "sonner";
@@ -15,9 +15,11 @@ function LoginPage() {
   const [password, setPassword] = useState("");
   const [submitting, setSubmitting] = useState(false);
 
-  if (!loading && user && isAdmin) {
-    throw redirect({ to: "/admin" });
-  }
+  useEffect(() => {
+    if (!loading && user && isAdmin) {
+      navigate({ to: "/admin" });
+    }
+  }, [loading, user, isAdmin, navigate]);
 
   const handle = async (e: React.FormEvent) => {
     e.preventDefault();
