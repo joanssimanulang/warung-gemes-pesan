@@ -100,9 +100,11 @@ export type Database = {
           created_at: string
           customer_name: string
           id: string
+          location_type: Database["public"]["Enums"]["location_type"]
           payment_status: Database["public"]["Enums"]["payment_status"]
+          room_id: string | null
           status: Database["public"]["Enums"]["order_status"]
-          table_number: string
+          table_number: string | null
           total_price: number
           updated_at: string
           whatsapp: string
@@ -111,9 +113,11 @@ export type Database = {
           created_at?: string
           customer_name: string
           id?: string
+          location_type?: Database["public"]["Enums"]["location_type"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          room_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
-          table_number: string
+          table_number?: string | null
           total_price: number
           updated_at?: string
           whatsapp: string
@@ -122,12 +126,82 @@ export type Database = {
           created_at?: string
           customer_name?: string
           id?: string
+          location_type?: Database["public"]["Enums"]["location_type"]
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          room_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
-          table_number?: string
+          table_number?: string | null
           total_price?: number
           updated_at?: string
           whatsapp?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "orders_room_id_fkey"
+            columns: ["room_id"]
+            isOneToOne: false
+            referencedRelation: "rooms"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      rooms: {
+        Row: {
+          building: string | null
+          created_at: string
+          floor: string | null
+          id: string
+          is_active: boolean
+          name: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          building?: string | null
+          created_at?: string
+          floor?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          building?: string | null
+          created_at?: string
+          floor?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      tables: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          label: string
+          notes: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label: string
+          notes?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          label?: string
+          notes?: string | null
+          updated_at?: string
         }
         Relationships: []
       }
@@ -171,6 +245,7 @@ export type Database = {
     }
     Enums: {
       app_role: "superadmin" | "admin"
+      location_type: "kantin" | "ruangan"
       order_status: "menunggu" | "diproses" | "selesai"
       payment_status: "menunggu_pembayaran" | "dibayar" | "gagal"
     }
@@ -301,6 +376,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["superadmin", "admin"],
+      location_type: ["kantin", "ruangan"],
       order_status: ["menunggu", "diproses", "selesai"],
       payment_status: ["menunggu_pembayaran", "dibayar", "gagal"],
     },
