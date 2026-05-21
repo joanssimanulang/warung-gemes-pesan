@@ -19,6 +19,7 @@ import { Route as TrackOrderIdRouteImport } from './routes/track.$orderId'
 import { Route as PaymentOrderIdRouteImport } from './routes/payment.$orderId'
 import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminMenusRouteImport } from './routes/admin.menus'
+import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
 
 const LoginRoute = LoginRouteImport.update({
@@ -71,6 +72,11 @@ const AdminMenusRoute = AdminMenusRouteImport.update({
   path: '/menus',
   getParentRoute: () => AdminRoute,
 } as any)
+const AdminLocationsRoute = AdminLocationsRouteImport.update({
+  id: '/locations',
+  path: '/locations',
+  getParentRoute: () => AdminRoute,
+} as any)
 const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   id: '/analytics',
   path: '/analytics',
@@ -84,6 +90,7 @@ export interface FileRoutesByFullPath {
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/locations': typeof AdminLocationsRoute
   '/admin/menus': typeof AdminMenusRoute
   '/admin/users': typeof AdminUsersRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
@@ -96,6 +103,7 @@ export interface FileRoutesByTo {
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/locations': typeof AdminLocationsRoute
   '/admin/menus': typeof AdminMenusRoute
   '/admin/users': typeof AdminUsersRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
@@ -110,6 +118,7 @@ export interface FileRoutesById {
   '/checkout': typeof CheckoutRoute
   '/login': typeof LoginRoute
   '/admin/analytics': typeof AdminAnalyticsRoute
+  '/admin/locations': typeof AdminLocationsRoute
   '/admin/menus': typeof AdminMenusRoute
   '/admin/users': typeof AdminUsersRoute
   '/payment/$orderId': typeof PaymentOrderIdRoute
@@ -125,6 +134,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/login'
     | '/admin/analytics'
+    | '/admin/locations'
     | '/admin/menus'
     | '/admin/users'
     | '/payment/$orderId'
@@ -137,6 +147,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/login'
     | '/admin/analytics'
+    | '/admin/locations'
     | '/admin/menus'
     | '/admin/users'
     | '/payment/$orderId'
@@ -150,6 +161,7 @@ export interface FileRouteTypes {
     | '/checkout'
     | '/login'
     | '/admin/analytics'
+    | '/admin/locations'
     | '/admin/menus'
     | '/admin/users'
     | '/payment/$orderId'
@@ -239,6 +251,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminMenusRouteImport
       parentRoute: typeof AdminRoute
     }
+    '/admin/locations': {
+      id: '/admin/locations'
+      path: '/locations'
+      fullPath: '/admin/locations'
+      preLoaderRoute: typeof AdminLocationsRouteImport
+      parentRoute: typeof AdminRoute
+    }
     '/admin/analytics': {
       id: '/admin/analytics'
       path: '/analytics'
@@ -251,6 +270,7 @@ declare module '@tanstack/react-router' {
 
 interface AdminRouteChildren {
   AdminAnalyticsRoute: typeof AdminAnalyticsRoute
+  AdminLocationsRoute: typeof AdminLocationsRoute
   AdminMenusRoute: typeof AdminMenusRoute
   AdminUsersRoute: typeof AdminUsersRoute
   AdminIndexRoute: typeof AdminIndexRoute
@@ -258,6 +278,7 @@ interface AdminRouteChildren {
 
 const AdminRouteChildren: AdminRouteChildren = {
   AdminAnalyticsRoute: AdminAnalyticsRoute,
+  AdminLocationsRoute: AdminLocationsRoute,
   AdminMenusRoute: AdminMenusRoute,
   AdminUsersRoute: AdminUsersRoute,
   AdminIndexRoute: AdminIndexRoute,
@@ -277,12 +298,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { createStart } from '@tanstack/react-start'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-  }
-}
