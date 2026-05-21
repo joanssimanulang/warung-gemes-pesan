@@ -38,10 +38,10 @@ function AdminOrdersPage() {
   const loadAll = async () => {
     const { data: o } = await supabase
       .from("orders")
-      .select("*")
+      .select("*, rooms(name,building,floor)")
       .order("created_at", { ascending: false })
       .limit(100);
-    setOrders((o ?? []) as Order[]);
+    setOrders((o ?? []) as unknown as Order[]);
     const ids = (o ?? []).map((x) => x.id);
     if (ids.length) {
       const { data: it } = await supabase.from("order_items").select("*").in("order_id", ids);
@@ -129,11 +129,14 @@ function OrderCard({
 
   // wa.me cleaned number
   const waNumber = order.whatsapp.replace(/[^0-9]/g, "").replace(/^0/, "62");
+  const locationLabel = order.location_type === "ruangan"
+    ? `Antar ke ${order.rooms?.name ?? "Ruangan"}${order.rooms?.building ? ` (${order.rooms.building}${order.rooms.floor ? ` Lt. ${order.rooms.floor}` : ""})` : ""}`
+    : `Meja ${order.table_number ?? "-"}`;
   const waMessage = encodeURIComponent(
-    `Halo ${order.customer_name}, pesanan kamu (#${order.id.slice(0, 8).toUpperCase()}) di Warung Mie Kampus sedang kami siapkan. Akan segera diantar ke meja ${order.table_number}. Terima kasih!`
+    `Halo ${order.customer_name}, pesanan kamu (#${order.id.slice(0, 8).toUpperCase()}) di Warung Mie Kampus sedang kami siapkan. ${order.location_type === "ruangan" ? `Akan diantar ke ${order.rooms?.name ?? "ruangan tujuan"}.` : `Akan segera diantar ke meja ${order.table_number}.`} Terima kasih!`
   );
   const waCompleteMessage = encodeURIComponent(
-    `Halo ${order.customer_name}, pesanan kamu (#${order.id.slice(0, 8).toUpperCase()}) sudah selesai dan siap diambil/diantar di meja ${order.table_number}. Selamat menikmati!`
+    `Halo ${order.customer_name}, pesanan kamu (#${order.id.slice(0, 8).toUpperCase()}) sudah selesai. ${order.location_type === "ruangan" ? `Diantar ke ${order.rooms?.name ?? "ruangan tujuan"}.` : `Silakan ambil di meja ${order.table_number}.`} Selamat menikmati!`
   );
 
   return (
@@ -142,7 +145,7 @@ function OrderCard({
         <div>
           <div className="font-mono text-xs text-muted-foreground">#{order.id.slice(0, 8).toUpperCase()}</div>
           <div className="text-base font-bold">{order.customer_name}</div>
-          <div className="text-xs text-muted-foreground">Meja {order.table_number} · {order.whatsapp}</div>
+          <div className="text-xs text-muted-foreground">{locationLabel} · {order.whatsapp}</div>
         </div>
         <StatusBadge status={order.status} />
       </div>
