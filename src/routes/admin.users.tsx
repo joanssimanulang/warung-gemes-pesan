@@ -1,7 +1,12 @@
 import { createFileRoute, redirect } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { useAuth } from "@/lib/auth";
-import { createAdmin, deleteAdmin, listAdmins, updateAdminPassword } from "@/lib/admins.functions";
+import {
+  createAdmin,
+  deleteAdmin,
+  listAdmins,
+  updateAdminPassword,
+} from "@/lib/admins.functions";
 import { Plus, Trash2, KeyRound, X, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
