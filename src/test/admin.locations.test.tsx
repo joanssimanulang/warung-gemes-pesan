@@ -31,10 +31,14 @@ import {
 import { toast } from "sonner";
 
 const findIconButton = async (icon: string) => {
-  const buttons = await screen.findAllByRole("button");
-  const btn = buttons.find((b) => b.querySelector(`svg.lucide-${icon}`));
-  if (!btn) throw new Error(`Button with icon lucide-${icon} not found`);
-  return btn;
+  const { waitFor } = await import("@testing-library/react");
+  return await waitFor(() => {
+    const btn = Array.from(document.querySelectorAll("button")).find((b) =>
+      b.querySelector(`svg.lucide-${icon}`),
+    );
+    if (!btn) throw new Error(`Button with icon lucide-${icon} not found`);
+    return btn as HTMLButtonElement;
+  });
 };
 
 describe("LocationsPage — Kelola Lokasi (TDD)", () => {
