@@ -186,7 +186,7 @@ describe("LocationsPage — Kelola Lokasi (TDD)", () => {
       setMockTables([{ id: "del-1", label: "4", notes: null, is_active: true }]);
       render(<LocationsPage />);
 
-      await userEvent.click(await findIconButton("trash-2"));
+      await userEvent.click(await findIconButton("trash2"));
 
       await waitFor(() => {
         const del = writesFor("tables").find((w) => w.type === "delete");
@@ -199,7 +199,7 @@ describe("LocationsPage — Kelola Lokasi (TDD)", () => {
       setMockTables([{ id: "keep-1", label: "4", notes: null, is_active: true }]);
       render(<LocationsPage />);
 
-      await userEvent.click(await findIconButton("trash-2"));
+      await userEvent.click(await findIconButton("trash2"));
       await new Promise((r) => setTimeout(r, 30));
       expect(writes.find((w) => w.type === "delete")).toBeUndefined();
     });
