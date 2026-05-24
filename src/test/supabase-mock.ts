@@ -42,22 +42,11 @@ function builder(table: string) {
   const state: { type?: "select" | "insert" | "update" | "delete"; payload?: unknown; eqId?: string } = {};
 
   const exec = async () => {
-    lastOp.table = table;
-    lastOp.type = state.type;
-    lastOp.payload = state.payload;
-    lastOp.eqId = state.eqId;
-
+    if (state.type && state.type !== "select") {
+      writes.push({ table, type: state.type, payload: state.payload, eqId: state.eqId });
+    }
     if (state.type === "select") {
       return { data: dataFor(table), error: null };
-    }
-    if (state.type === "insert") {
-      return { data: null, error: null };
-    }
-    if (state.type === "update") {
-      return { data: null, error: null };
-    }
-    if (state.type === "delete") {
-      return { data: null, error: null };
     }
     return { data: null, error: null };
   };
