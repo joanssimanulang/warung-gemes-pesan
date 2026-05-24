@@ -23,7 +23,7 @@ interface RoomRow {
   is_active: boolean;
 }
 
-function LocationsPage() {
+export function LocationsPage() {
   const [tab, setTab] = useState<"tables" | "rooms">("tables");
   const [tables, setTables] = useState<TableRow[]>([]);
   const [rooms, setRooms] = useState<RoomRow[]>([]);
