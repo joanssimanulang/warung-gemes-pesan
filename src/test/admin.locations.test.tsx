@@ -8,7 +8,7 @@ vi.mock("@/integrations/supabase/client", async () => {
   return { supabase: mod.supabase };
 });
 
-// Mock @tanstack/react-router's createFileRoute so importing the route file is safe
+// Mock createFileRoute so importing the route file is safe in unit tests
 vi.mock("@tanstack/react-router", () => ({
   createFileRoute: () => (opts: unknown) => opts,
 }));
@@ -23,18 +23,28 @@ import {
   setMockTables,
   setMockRooms,
   resetMockData,
-  lastOp,
+  writes,
+  writesFor,
+  lastWrite,
   supabase,
 } from "./supabase-mock";
 import { toast } from "sonner";
 
-describe("LocationsPage - Kelola Lokasi", () => {
+const findIconButton = async (icon: string) => {
+  const buttons = await screen.findAllByRole("button");
+  const btn = buttons.find((b) => b.querySelector(`svg.lucide-${icon}`));
+  if (!btn) throw new Error(`Button with icon lucide-${icon} not found`);
+  return btn;
+};
+
+describe("LocationsPage — Kelola Lokasi (TDD)", () => {
   beforeEach(() => {
     resetMockData();
     vi.clearAllMocks();
   });
 
-  describe("Initial render", () => {
+  // ───────────────────────── Render ─────────────────────────
+  describe("Render", () => {
     it("shows empty state when no tables exist", async () => {
       render(<LocationsPage />);
       expect(await screen.findByText(/Belum ada meja/i)).toBeInTheDocument();
@@ -46,21 +56,19 @@ describe("LocationsPage - Kelola Lokasi", () => {
         { id: "2", label: "2", notes: null, is_active: true },
       ]);
       render(<LocationsPage />);
-      await waitFor(() => {
-        expect(screen.getByRole("button", { name: /Meja \(2\)/i })).toBeInTheDocument();
-      });
+      await waitFor(() =>
+        expect(screen.getByRole("button", { name: /Meja \(2\)/i })).toBeInTheDocument(),
+      );
     });
 
-    it("renders table list with labels", async () => {
-      setMockTables([
-        { id: "a", label: "VIP-1", notes: "Dekat jendela", is_active: true },
-      ]);
+    it("renders table label and notes", async () => {
+      setMockTables([{ id: "a", label: "VIP-1", notes: "Dekat jendela", is_active: true }]);
       render(<LocationsPage />);
       expect(await screen.findByText(/Meja VIP-1/i)).toBeInTheDocument();
       expect(screen.getByText("Dekat jendela")).toBeInTheDocument();
     });
 
-    it("renders rooms when rooms tab is selected", async () => {
+    it("renders rooms with building and floor when rooms tab is selected", async () => {
       setMockRooms([
         {
           id: "r1",
@@ -78,31 +86,20 @@ describe("LocationsPage - Kelola Lokasi", () => {
     });
   });
 
+  // ───────────────────────── Add Table ─────────────────────────
   describe("Add Table", () => {
-    it("opens modal and inserts a new table with trimmed payload", async () => {
+    it("inserts a new table with trimmed payload", async () => {
       render(<LocationsPage />);
       await userEvent.click(await screen.findByRole("button", { name: /Tambah Meja/i }));
-
-      const labelInput = await screen.findByPlaceholderText(/Contoh: 11 atau VIP-A/i);
-      await userEvent.type(labelInput, "  12  ");
+      await userEvent.type(await screen.findByPlaceholderText(/Contoh: 11/i), "  12  ");
       await userEvent.type(screen.getByPlaceholderText(/Dekat jendela/i), "  Pojok  ");
       await userEvent.click(screen.getByRole("button", { name: /^Simpan$/i }));
 
       await waitFor(() => {
-        expect(lastOp.type).toBe("insert");
-        expect(lastOp.table).toBe("tables");
-        expect(lastOp.payload).toEqual({ label: "12", notes: "Pojok" });
+        const ins = writesFor("tables").find((w) => w.type === "insert");
+        expect(ins?.payload).toEqual({ label: "12", notes: "Pojok" });
       });
       expect(toast.success).toHaveBeenCalledWith("Tersimpan");
-    });
-
-    it("rejects empty label and does not call supabase insert", async () => {
-      render(<LocationsPage />);
-      await userEvent.click(await screen.findByRole("button", { name: /Tambah Meja/i }));
-      await userEvent.click(await screen.findByRole("button", { name: /^Simpan$/i }));
-
-      expect(toast.error).toHaveBeenCalledWith("Label meja wajib diisi");
-      expect(lastOp.type).not.toBe("insert");
     });
 
     it("stores notes as null when empty", async () => {
@@ -112,65 +109,88 @@ describe("LocationsPage - Kelola Lokasi", () => {
       await userEvent.click(screen.getByRole("button", { name: /^Simpan$/i }));
 
       await waitFor(() => {
-        expect(lastOp.payload).toEqual({ label: "7", notes: null });
+        const ins = writesFor("tables").find((w) => w.type === "insert");
+        expect(ins?.payload).toEqual({ label: "7", notes: null });
       });
+    });
+
+    it("rejects empty label and does not insert", async () => {
+      render(<LocationsPage />);
+      await userEvent.click(await screen.findByRole("button", { name: /Tambah Meja/i }));
+      await userEvent.click(await screen.findByRole("button", { name: /^Simpan$/i }));
+
+      expect(toast.error).toHaveBeenCalledWith("Label meja wajib diisi");
+      expect(writes.find((w) => w.type === "insert")).toBeUndefined();
+    });
+
+    it("enforces 20-char max length on label input", async () => {
+      render(<LocationsPage />);
+      await userEvent.click(await screen.findByRole("button", { name: /Tambah Meja/i }));
+      const input = (await screen.findByPlaceholderText(/Contoh: 11/i)) as HTMLInputElement;
+      expect(input.maxLength).toBe(20);
     });
   });
 
+  // ───────────────────────── Edit Table ─────────────────────────
   describe("Edit Table", () => {
-    it("opens modal pre-filled and issues update with row id", async () => {
+    it("pre-fills modal and issues update with row id", async () => {
       setMockTables([{ id: "tbl-1", label: "5", notes: "old", is_active: true }]);
       render(<LocationsPage />);
 
-      // pencil = first edit button on the rendered row
-      const editButtons = await screen.findAllByRole("button");
-      const pencil = editButtons.find((b) => b.querySelector("svg.lucide-pencil"));
-      expect(pencil).toBeTruthy();
-      await userEvent.click(pencil!);
-
+      await userEvent.click(await findIconButton("pencil"));
       const labelInput = await screen.findByDisplayValue("5");
       await userEvent.clear(labelInput);
       await userEvent.type(labelInput, "9");
       await userEvent.click(screen.getByRole("button", { name: /^Simpan$/i }));
 
       await waitFor(() => {
-        expect(lastOp.type).toBe("update");
-        expect(lastOp.table).toBe("tables");
-        expect(lastOp.eqId).toBe("tbl-1");
-        expect(lastOp.payload).toMatchObject({ label: "9" });
+        const upd = writesFor("tables").find((w) => w.type === "update");
+        expect(upd?.eqId).toBe("tbl-1");
+        expect(upd?.payload).toMatchObject({ label: "9" });
       });
     });
   });
 
+  // ───────────────────────── Toggle active ─────────────────────────
   describe("Toggle active", () => {
-    it("flips is_active when status pill is clicked", async () => {
+    it("flips is_active to false when active pill is clicked", async () => {
       setMockTables([{ id: "tbl-x", label: "3", notes: null, is_active: true }]);
       render(<LocationsPage />);
-      const pill = await screen.findByRole("button", { name: /^Aktif$/i });
-      await userEvent.click(pill);
+
+      await userEvent.click(await screen.findByRole("button", { name: /^Aktif$/i }));
 
       await waitFor(() => {
-        expect(lastOp.type).toBe("update");
-        expect(lastOp.eqId).toBe("tbl-x");
-        expect(lastOp.payload).toEqual({ is_active: false });
+        const upd = writesFor("tables").find((w) => w.type === "update");
+        expect(upd?.eqId).toBe("tbl-x");
+        expect(upd?.payload).toEqual({ is_active: false });
+      });
+    });
+
+    it("flips is_active to true when nonactive pill is clicked", async () => {
+      setMockTables([{ id: "tbl-y", label: "3", notes: null, is_active: false }]);
+      render(<LocationsPage />);
+
+      await userEvent.click(await screen.findByRole("button", { name: /^Nonaktif$/i }));
+
+      await waitFor(() => {
+        const upd = writesFor("tables").find((w) => w.type === "update");
+        expect(upd?.payload).toEqual({ is_active: true });
       });
     });
   });
 
+  // ───────────────────────── Delete ─────────────────────────
   describe("Delete table", () => {
     it("calls delete after confirm", async () => {
       vi.spyOn(window, "confirm").mockReturnValue(true);
       setMockTables([{ id: "del-1", label: "4", notes: null, is_active: true }]);
       render(<LocationsPage />);
 
-      const buttons = await screen.findAllByRole("button");
-      const trash = buttons.find((b) => b.querySelector("svg.lucide-trash-2"));
-      await userEvent.click(trash!);
+      await userEvent.click(await findIconButton("trash-2"));
 
       await waitFor(() => {
-        expect(lastOp.type).toBe("delete");
-        expect(lastOp.table).toBe("tables");
-        expect(lastOp.eqId).toBe("del-1");
+        const del = writesFor("tables").find((w) => w.type === "delete");
+        expect(del?.eqId).toBe("del-1");
       });
     });
 
@@ -179,18 +199,15 @@ describe("LocationsPage - Kelola Lokasi", () => {
       setMockTables([{ id: "keep-1", label: "4", notes: null, is_active: true }]);
       render(<LocationsPage />);
 
-      const buttons = await screen.findAllByRole("button");
-      const trash = buttons.find((b) => b.querySelector("svg.lucide-trash-2"));
-      await userEvent.click(trash!);
-
-      // brief wait to ensure no async write happened
+      await userEvent.click(await findIconButton("trash-2"));
       await new Promise((r) => setTimeout(r, 30));
-      expect(lastOp.type).not.toBe("delete");
+      expect(writes.find((w) => w.type === "delete")).toBeUndefined();
     });
   });
 
+  // ───────────────────────── Add Room ─────────────────────────
   describe("Add Room", () => {
-    it("inserts a room with trimmed/nulled fields", async () => {
+    it("inserts a room with trimmed payload and null-empty fields", async () => {
       render(<LocationsPage />);
       await userEvent.click(await screen.findByRole("button", { name: /Ruangan \(0\)/i }));
       await userEvent.click(screen.getByRole("button", { name: /Tambah Ruangan/i }));
@@ -204,9 +221,8 @@ describe("LocationsPage - Kelola Lokasi", () => {
       await userEvent.click(screen.getByRole("button", { name: /^Simpan$/i }));
 
       await waitFor(() => {
-        expect(lastOp.type).toBe("insert");
-        expect(lastOp.table).toBe("rooms");
-        expect(lastOp.payload).toEqual({
+        const ins = writesFor("rooms").find((w) => w.type === "insert");
+        expect(ins?.payload).toEqual({
           name: "Lab AI",
           building: "Gedung C",
           floor: "3",
@@ -215,14 +231,26 @@ describe("LocationsPage - Kelola Lokasi", () => {
       });
     });
 
-    it("rejects empty name", async () => {
+    it("rejects empty room name", async () => {
       render(<LocationsPage />);
       await userEvent.click(await screen.findByRole("button", { name: /Ruangan \(0\)/i }));
       await userEvent.click(screen.getByRole("button", { name: /Tambah Ruangan/i }));
       await userEvent.click(await screen.findByRole("button", { name: /^Simpan$/i }));
 
       expect(toast.error).toHaveBeenCalledWith("Nama ruangan wajib diisi");
-      expect(supabase.from).not.toHaveBeenCalledWith("rooms");
+      expect(writesFor("rooms").find((w) => w.type === "insert")).toBeUndefined();
+    });
+  });
+
+  // ───────────────────────── Smoke ─────────────────────────
+  it("initial load queries both tables and rooms from supabase", async () => {
+    render(<LocationsPage />);
+    await waitFor(() => {
+      expect(supabase.from).toHaveBeenCalledWith("tables");
+      expect(supabase.from).toHaveBeenCalledWith("rooms");
     });
   });
 });
+
+// Avoid unused-import warning for lastWrite (exported for ad-hoc debugging)
+void lastWrite;
