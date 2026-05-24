@@ -12,12 +12,15 @@ let rooms: Array<{
 }> = [];
 
 // Capture last operation so tests can assert payloads
-export const lastOp: {
-  table?: string;
-  type?: "select" | "insert" | "update" | "delete";
+export interface WriteOp {
+  table: string;
+  type: "insert" | "update" | "delete";
   payload?: unknown;
   eqId?: string;
-} = {};
+}
+export const writes: WriteOp[] = [];
+export const lastWrite = () => writes[writes.length - 1];
+export const writesFor = (table: string) => writes.filter((w) => w.table === table);
 
 export function setMockTables(t: typeof tables) {
   tables = t;
@@ -28,7 +31,7 @@ export function setMockRooms(r: typeof rooms) {
 export function resetMockData() {
   tables = [];
   rooms = [];
-  for (const k of Object.keys(lastOp)) delete (lastOp as Record<string, unknown>)[k];
+  writes.length = 0;
 }
 
 function dataFor(table: string) {
