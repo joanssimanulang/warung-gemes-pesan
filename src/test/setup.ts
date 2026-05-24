@@ -9,6 +9,5 @@ afterEach(() => {
 
 // jsdom doesn't implement window.confirm reliably across versions
 if (!window.confirm) {
-  // @ts-expect-error - polyfill for tests
-  window.confirm = () => true;
+  (window as unknown as { confirm: () => boolean }).confirm = () => true;
 }
