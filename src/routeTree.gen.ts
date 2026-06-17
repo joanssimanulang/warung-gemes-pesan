@@ -21,7 +21,6 @@ import { Route as AdminUsersRouteImport } from './routes/admin.users'
 import { Route as AdminMenusRouteImport } from './routes/admin.menus'
 import { Route as AdminLocationsRouteImport } from './routes/admin.locations'
 import { Route as AdminAnalyticsRouteImport } from './routes/admin.analytics'
-import { Route as ApiPublicMidtransNotificationRouteImport } from './routes/api/public/midtrans-notification'
 
 const LoginRoute = LoginRouteImport.update({
   id: '/login',
@@ -83,12 +82,6 @@ const AdminAnalyticsRoute = AdminAnalyticsRouteImport.update({
   path: '/analytics',
   getParentRoute: () => AdminRoute,
 } as any)
-const ApiPublicMidtransNotificationRoute =
-  ApiPublicMidtransNotificationRouteImport.update({
-    id: '/api/public/midtrans-notification',
-    path: '/api/public/midtrans-notification',
-    getParentRoute: () => rootRouteImport,
-  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,7 +96,6 @@ export interface FileRoutesByFullPath {
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/track/$orderId': typeof TrackOrderIdRoute
   '/admin/': typeof AdminIndexRoute
-  '/api/public/midtrans-notification': typeof ApiPublicMidtransNotificationRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -117,7 +109,6 @@ export interface FileRoutesByTo {
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/track/$orderId': typeof TrackOrderIdRoute
   '/admin': typeof AdminIndexRoute
-  '/api/public/midtrans-notification': typeof ApiPublicMidtransNotificationRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -133,7 +124,6 @@ export interface FileRoutesById {
   '/payment/$orderId': typeof PaymentOrderIdRoute
   '/track/$orderId': typeof TrackOrderIdRoute
   '/admin/': typeof AdminIndexRoute
-  '/api/public/midtrans-notification': typeof ApiPublicMidtransNotificationRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -150,7 +140,6 @@ export interface FileRouteTypes {
     | '/payment/$orderId'
     | '/track/$orderId'
     | '/admin/'
-    | '/api/public/midtrans-notification'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -164,7 +153,6 @@ export interface FileRouteTypes {
     | '/payment/$orderId'
     | '/track/$orderId'
     | '/admin'
-    | '/api/public/midtrans-notification'
   id:
     | '__root__'
     | '/'
@@ -179,7 +167,6 @@ export interface FileRouteTypes {
     | '/payment/$orderId'
     | '/track/$orderId'
     | '/admin/'
-    | '/api/public/midtrans-notification'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -190,7 +177,6 @@ export interface RootRouteChildren {
   LoginRoute: typeof LoginRoute
   PaymentOrderIdRoute: typeof PaymentOrderIdRoute
   TrackOrderIdRoute: typeof TrackOrderIdRoute
-  ApiPublicMidtransNotificationRoute: typeof ApiPublicMidtransNotificationRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -279,13 +265,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminAnalyticsRouteImport
       parentRoute: typeof AdminRoute
     }
-    '/api/public/midtrans-notification': {
-      id: '/api/public/midtrans-notification'
-      path: '/api/public/midtrans-notification'
-      fullPath: '/api/public/midtrans-notification'
-      preLoaderRoute: typeof ApiPublicMidtransNotificationRouteImport
-      parentRoute: typeof rootRouteImport
-    }
   }
 }
 
@@ -315,7 +294,6 @@ const rootRouteChildren: RootRouteChildren = {
   LoginRoute: LoginRoute,
   PaymentOrderIdRoute: PaymentOrderIdRoute,
   TrackOrderIdRoute: TrackOrderIdRoute,
-  ApiPublicMidtransNotificationRoute: ApiPublicMidtransNotificationRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)

@@ -21,17 +21,20 @@ function TrackPage() {
   const [items, setItems] = useState<any[]>([]);
 
   useEffect(() => {
-    let cancelled = false;
     const load = async () => {
-      const { data: o } = await supabase.rpc("get_public_order", { p_order_id: orderId });
-      if (!cancelled) setOrder(Array.isArray(o) ? o[0] ?? null : o);
-      const { data: it } = await supabase.rpc("get_public_order_items", { p_order_id: orderId });
-      if (!cancelled) setItems((it ?? []) as any[]);
+      const { data: o } = await supabase.from("orders").select("*").eq("id", orderId).single();
+      setOrder(o);
+      const { data: it } = await supabase.from("order_items").select("*").eq("order_id", orderId);
+      setItems(it ?? []);
     };
     load();
-    // Poll every 5s for status updates (realtime disabled for security)
-    const interval = setInterval(load, 5000);
-    return () => { cancelled = true; clearInterval(interval); };
+    const channel = supabase
+      .channel(`order-${orderId}`)
+      .on("postgres_changes", { event: "UPDATE", schema: "public", table: "orders", filter: `id=eq.${orderId}` }, (payload) => {
+        setOrder(payload.new);
+      })
+      .subscribe();
+    return () => { supabase.removeChannel(channel); };
   }, [orderId]);
 
   if (!order) {
@@ -44,9 +47,6 @@ function TrackPage() {
   }
 
   const stepIndex = steps.findIndex((s) => s.key === order.status);
-  const locationDisplay = order.location_type === "ruangan"
-    ? (order.room_name ?? "Ruangan")
-    : `Meja ${order.table_number ?? "-"}`;
 
   return (
     <div className="min-h-screen bg-background pb-10">
@@ -93,9 +93,9 @@ function TrackPage() {
           </div>
 
           <div className="mt-5 grid grid-cols-2 gap-3 text-sm">
-            <Info label="Nama">{order.customer_first_name}</Info>
-            <Info label="Lokasi">{locationDisplay}</Info>
-            <Info label="WhatsApp">{order.whatsapp_masked}</Info>
+            <Info label="Nama">{order.customer_name}</Info>
+            <Info label="No. Meja">{order.table_number}</Info>
+            <Info label="WhatsApp">{order.whatsapp}</Info>
             <Info label="Total"><span className="font-bold text-primary">{formatRupiah(Number(order.total_price))}</span></Info>
           </div>
         </div>
@@ -113,7 +113,7 @@ function TrackPage() {
         </div>
 
         <p className="mt-4 text-center text-xs text-muted-foreground">
-          Halaman ini terupdate otomatis setiap beberapa detik.
+          Halaman ini terupdate otomatis saat status pesananmu berubah.
         </p>
       </main>
     </div>
