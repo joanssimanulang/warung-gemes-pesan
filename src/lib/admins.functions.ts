@@ -1,10 +1,17 @@
 import { createServerFn } from "@tanstack/react-start";
 import { requireSupabaseAuth } from "@/integrations/supabase/auth-middleware";
-import { supabaseAdmin } from "@/integrations/supabase/client.server";
 import { z } from "zod";
 
-async function assertSuperadmin(userId: string) {
-  const { data, error } = await supabaseAdmin
+const createSchema = z.object({
+  email: z.string().email().max(255),
+  password: z.string().min(8).max(72),
+});
+
+async function assertSuperadminWithUserClient(
+  userSupabase: { from: (t: string) => any },
+  userId: string,
+) {
+  const { data, error } = await userSupabase
     .from("user_roles")
     .select("role")
     .eq("user_id", userId)
@@ -14,15 +21,11 @@ async function assertSuperadmin(userId: string) {
   if (!data) throw new Response("Forbidden: superadmin only", { status: 403 });
 }
 
-const createSchema = z.object({
-  email: z.string().email().max(255),
-  password: z.string().min(8).max(72),
-});
-
 export const listAdmins = createServerFn({ method: "GET" })
   .middleware([requireSupabaseAuth])
   .handler(async ({ context }) => {
-    await assertSuperadmin(context.userId);
+    await assertSuperadminWithUserClient(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data, error } = await supabaseAdmin
       .from("user_roles")
       .select("id, user_id, role, email, created_at")
@@ -35,7 +38,8 @@ export const createAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => createSchema.parse(d))
   .handler(async ({ data, context }) => {
-    await assertSuperadmin(context.userId);
+    await assertSuperadminWithUserClient(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: created, error } = await supabaseAdmin.auth.admin.createUser({
       email: data.email,
       password: data.password,
@@ -55,11 +59,11 @@ export const deleteAdmin = createServerFn({ method: "POST" })
   .middleware([requireSupabaseAuth])
   .inputValidator((d: unknown) => z.object({ user_id: z.string().uuid() }).parse(d))
   .handler(async ({ data, context }) => {
-    await assertSuperadmin(context.userId);
+    await assertSuperadminWithUserClient(context.supabase, context.userId);
     if (data.user_id === context.userId) {
       throw new Response("Tidak dapat menghapus akun sendiri", { status: 400 });
     }
-    // Don't allow deleting superadmins
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { data: roles } = await supabaseAdmin
       .from("user_roles")
       .select("role")
@@ -78,7 +82,8 @@ export const updateAdminPassword = createServerFn({ method: "POST" })
     z.object({ user_id: z.string().uuid(), password: z.string().min(8).max(72) }).parse(d)
   )
   .handler(async ({ data, context }) => {
-    await assertSuperadmin(context.userId);
+    await assertSuperadminWithUserClient(context.supabase, context.userId);
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
     const { error } = await supabaseAdmin.auth.admin.updateUserById(data.user_id, { password: data.password });
     if (error) throw new Response(error.message, { status: 500 });
     return { ok: true };

@@ -18,17 +18,15 @@ function PaymentPage() {
   const [paying, setPaying] = useState(false);
 
   useEffect(() => {
-    supabase.from("orders").select("*").eq("id", orderId).single().then(({ data }) => setOrder(data));
+    supabase.rpc("get_public_order", { p_order_id: orderId }).then(({ data }) => {
+      setOrder(Array.isArray(data) ? data[0] ?? null : data);
+    });
   }, [orderId]);
 
   const simulatePay = async () => {
     setPaying(true);
-    // simulate gateway delay
     await new Promise((r) => setTimeout(r, 1800));
-    const { error } = await supabase
-      .from("orders")
-      .update({ payment_status: "dibayar" })
-      .eq("id", orderId);
+    const { error } = await supabase.rpc("mark_order_paid", { p_order_id: orderId });
     setPaying(false);
     if (error) {
       toast.error("Pembayaran gagal: " + error.message);
@@ -37,6 +35,7 @@ function PaymentPage() {
     setPaid(true);
     setTimeout(() => navigate({ to: "/track/$orderId", params: { orderId } }), 1200);
   };
+
 
   if (!order) {
     return (

@@ -234,6 +234,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_public_order: {
+        Args: { p_order_id: string }
+        Returns: {
+          created_at: string
+          customer_first_name: string
+          id: string
+          location_type: Database["public"]["Enums"]["location_type"]
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          room_name: string
+          status: Database["public"]["Enums"]["order_status"]
+          table_number: string
+          total_price: number
+          whatsapp_masked: string
+        }[]
+      }
+      get_public_order_items: {
+        Args: { p_order_id: string }
+        Returns: {
+          id: string
+          menu_name: string
+          quantity: number
+          subtotal: number
+          unit_price: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -242,6 +267,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
+      mark_order_paid: { Args: { p_order_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "superadmin" | "admin"
