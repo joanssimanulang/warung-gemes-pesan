@@ -101,7 +101,10 @@ export type Database = {
           customer_name: string
           id: string
           location_type: Database["public"]["Enums"]["location_type"]
+          midtrans_order_id: string | null
+          payment_expires_at: string | null
           payment_status: Database["public"]["Enums"]["payment_status"]
+          qr_url: string | null
           room_id: string | null
           status: Database["public"]["Enums"]["order_status"]
           table_number: string | null
@@ -114,7 +117,10 @@ export type Database = {
           customer_name: string
           id?: string
           location_type?: Database["public"]["Enums"]["location_type"]
+          midtrans_order_id?: string | null
+          payment_expires_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          qr_url?: string | null
           room_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           table_number?: string | null
@@ -127,7 +133,10 @@ export type Database = {
           customer_name?: string
           id?: string
           location_type?: Database["public"]["Enums"]["location_type"]
+          midtrans_order_id?: string | null
+          payment_expires_at?: string | null
           payment_status?: Database["public"]["Enums"]["payment_status"]
+          qr_url?: string | null
           room_id?: string | null
           status?: Database["public"]["Enums"]["order_status"]
           table_number?: string | null
@@ -234,6 +243,42 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_midtrans_status: {
+        Args: {
+          p_fraud_status: string
+          p_order_id: string
+          p_transaction_status: string
+        }
+        Returns: undefined
+      }
+      get_public_order: {
+        Args: { p_order_id: string }
+        Returns: {
+          created_at: string
+          customer_first_name: string
+          id: string
+          location_type: Database["public"]["Enums"]["location_type"]
+          midtrans_order_id: string
+          payment_expires_at: string
+          payment_status: Database["public"]["Enums"]["payment_status"]
+          qr_url: string
+          room_name: string
+          status: Database["public"]["Enums"]["order_status"]
+          table_number: string
+          total_price: number
+          whatsapp_masked: string
+        }[]
+      }
+      get_public_order_items: {
+        Args: { p_order_id: string }
+        Returns: {
+          id: string
+          menu_name: string
+          quantity: number
+          subtotal: number
+          unit_price: number
+        }[]
+      }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -242,6 +287,7 @@ export type Database = {
         Returns: boolean
       }
       is_admin_or_super: { Args: { _user_id: string }; Returns: boolean }
+      mark_order_paid: { Args: { p_order_id: string }; Returns: undefined }
     }
     Enums: {
       app_role: "superadmin" | "admin"
