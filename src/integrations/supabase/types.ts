@@ -251,17 +251,6 @@ export type Database = {
         }
         Returns: undefined
       }
-      can_insert_order_item: {
-        Args: {
-          p_menu_id: string
-          p_menu_name: string
-          p_order_id: string
-          p_quantity: number
-          p_subtotal: number
-          p_unit_price: number
-        }
-        Returns: boolean
-      }
       get_public_order: {
         Args: { p_order_id: string }
         Returns: {
