@@ -63,25 +63,25 @@ function CheckoutPage() {
     const tableLabel = locationType === "kantin" ? tables.find((t) => t.id === tableId)?.label ?? null : null;
 
     setLoading(true);
-    const { data: order, error } = await supabase
+    const orderId = crypto.randomUUID();
+    const { error } = await supabase
       .from("orders")
       .insert({
+        id: orderId,
         customer_name: parsed.data.customer_name,
         whatsapp: parsed.data.whatsapp,
         total_price: total,
         location_type: locationType,
         table_number: tableLabel,
         room_id: locationType === "ruangan" ? roomId : null,
-      })
-      .select("id")
-      .single();
-    if (error || !order) {
+      });
+    if (error) {
       setLoading(false);
       toast.error("Gagal membuat pesanan: " + (error?.message ?? ""));
       return;
     }
     const itemsPayload = items.map((i) => ({
-      order_id: order.id,
+      order_id: orderId,
       menu_id: i.menu_id,
       menu_name: i.name,
       unit_price: i.price,
@@ -95,7 +95,7 @@ function CheckoutPage() {
       return;
     }
     clear();
-    navigate({ to: "/payment/$orderId", params: { orderId: order.id } });
+    navigate({ to: "/payment/$orderId", params: { orderId } });
   };
 
   return (
