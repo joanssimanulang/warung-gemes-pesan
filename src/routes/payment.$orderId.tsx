@@ -110,6 +110,7 @@ function PaymentPage() {
   }
 
   const paid = order.payment_status === "dibayar";
+  const qrExpired = !paid && isQrExpired(order.payment_expires_at);
 
   return (
     <div className="min-h-screen bg-background pb-10">
@@ -147,6 +148,20 @@ function PaymentPage() {
                 <AlertTriangle className="h-12 w-12 text-destructive" />
                 <div className="mt-2 text-sm font-semibold text-destructive">{error}</div>
               </div>
+            ) : qrExpired ? (
+              <div className="flex flex-col items-center text-center">
+                <AlertTriangle className="h-12 w-12 text-warning" />
+                <div className="mt-2 text-sm font-semibold">QRIS sudah kedaluwarsa</div>
+                <button
+                  type="button"
+                  onClick={requestFreshQr}
+                  disabled={refreshing}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+                >
+                  {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  Buat QRIS Baru
+                </button>
+              </div>
             ) : qrUrl ? (
               <>
                 <div className="rounded-2xl bg-white p-3">
@@ -159,14 +174,25 @@ function PaymentPage() {
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   <span className="font-medium">Menunggu pembayaran…</span>
                 </div>
-                <a
-                  href="https://simulator.sandbox.midtrans.com/qris/index"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-block rounded-full border border-primary px-4 py-2 text-xs font-semibold text-primary"
-                >
-                  Buka Simulator QRIS Sandbox
-                </a>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={copyQrUrl}
+                    className="inline-flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-xs font-semibold text-primary"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Salin Link QR
+                  </button>
+                  <a
+                    href="https://simulator.sandbox.midtrans.com/v2/qris/index"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-xs font-semibold text-primary"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Simulator QRIS
+                  </a>
+                </div>
               </>
             ) : (
               <div className="flex flex-col items-center gap-2 py-8 text-sm text-muted-foreground">
