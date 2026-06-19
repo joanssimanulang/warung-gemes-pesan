@@ -4,7 +4,7 @@ import { useServerFn } from "@tanstack/react-start";
 import { supabase } from "@/integrations/supabase/client";
 import { CustomerHeader } from "@/components/CustomerHeader";
 import { formatRupiah } from "@/lib/format";
-import { Loader2, CheckCircle2, AlertTriangle } from "lucide-react";
+import { Loader2, CheckCircle2, AlertTriangle, Copy, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
 import { createQrisTransaction } from "@/lib/midtrans.functions";
 
@@ -20,7 +20,35 @@ function PaymentPage() {
   const [order, setOrder] = useState<any>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const requestedRef = useRef(false);
+
+  const isQrExpired = (expiresAt?: string | null) => {
+    if (!expiresAt) return false;
+    return new Date(expiresAt).getTime() <= Date.now();
+  };
+
+  const requestFreshQr = async () => {
+    setError(null);
+    setRefreshing(true);
+    try {
+      const res = await createQris({ data: { orderId } });
+      if (res?.qr_url) setQrUrl(res.qr_url);
+      const { data } = await supabase.rpc("get_public_order", { p_order_id: orderId });
+      const o = Array.isArray(data) ? data[0] ?? null : data;
+      if (o) setOrder(o);
+    } catch (e: any) {
+      setError(e?.message ?? "Gagal membuat QRIS");
+    } finally {
+      setRefreshing(false);
+    }
+  };
+
+  const copyQrUrl = async () => {
+    if (!qrUrl) return;
+    await navigator.clipboard.writeText(qrUrl);
+    toast.success("Link QR disalin");
+  };
 
   // Initial load + start QR request
   useEffect(() => {
@@ -30,13 +58,18 @@ function PaymentPage() {
       const o = Array.isArray(data) ? data[0] ?? null : data;
       if (cancelled) return;
       setOrder(o);
-      if (o?.qr_url) setQrUrl(o.qr_url);
+      const expired = isQrExpired(o?.payment_expires_at);
+      if (o?.qr_url && !expired) setQrUrl(o.qr_url);
+      if (o?.qr_url && expired) setQrUrl(null);
 
-      if (!requestedRef.current && o && o.payment_status !== "dibayar" && !o.qr_url) {
+      if (!requestedRef.current && o && o.payment_status !== "dibayar" && (!o.qr_url || expired)) {
         requestedRef.current = true;
         try {
           const res = await createQris({ data: { orderId } });
           if (!cancelled && res?.qr_url) setQrUrl(res.qr_url);
+          const { data: freshData } = await supabase.rpc("get_public_order", { p_order_id: orderId });
+          const freshOrder = Array.isArray(freshData) ? freshData[0] ?? null : freshData;
+          if (!cancelled && freshOrder) setOrder(freshOrder);
         } catch (e: any) {
           if (!cancelled) setError(e?.message ?? "Gagal membuat QRIS");
         }
@@ -53,7 +86,8 @@ function PaymentPage() {
       const o = Array.isArray(data) ? data[0] ?? null : data;
       if (o) {
         setOrder(o);
-        if (o.qr_url && !qrUrl) setQrUrl(o.qr_url);
+        if (o.qr_url && !isQrExpired(o.payment_expires_at)) setQrUrl(o.qr_url);
+        if (o.qr_url && isQrExpired(o.payment_expires_at)) setQrUrl(null);
         if (o.payment_status === "dibayar") {
           clearInterval(t);
           toast.success("Pembayaran berhasil");
@@ -76,6 +110,7 @@ function PaymentPage() {
   }
 
   const paid = order.payment_status === "dibayar";
+  const qrExpired = !paid && isQrExpired(order.payment_expires_at);
 
   return (
     <div className="min-h-screen bg-background pb-10">
@@ -113,6 +148,20 @@ function PaymentPage() {
                 <AlertTriangle className="h-12 w-12 text-destructive" />
                 <div className="mt-2 text-sm font-semibold text-destructive">{error}</div>
               </div>
+            ) : qrExpired ? (
+              <div className="flex flex-col items-center text-center">
+                <AlertTriangle className="h-12 w-12 text-warning" />
+                <div className="mt-2 text-sm font-semibold">QRIS sudah kedaluwarsa</div>
+                <button
+                  type="button"
+                  onClick={requestFreshQr}
+                  disabled={refreshing}
+                  className="mt-4 inline-flex items-center gap-2 rounded-full bg-primary px-4 py-2 text-xs font-semibold text-primary-foreground disabled:opacity-60"
+                >
+                  {refreshing ? <Loader2 className="h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
+                  Buat QRIS Baru
+                </button>
+              </div>
             ) : qrUrl ? (
               <>
                 <div className="rounded-2xl bg-white p-3">
@@ -125,14 +174,25 @@ function PaymentPage() {
                   <Loader2 className="h-4 w-4 animate-spin text-primary" />
                   <span className="font-medium">Menunggu pembayaran…</span>
                 </div>
-                <a
-                  href="https://simulator.sandbox.midtrans.com/qris/index"
-                  target="_blank"
-                  rel="noreferrer"
-                  className="mt-4 inline-block rounded-full border border-primary px-4 py-2 text-xs font-semibold text-primary"
-                >
-                  Buka Simulator QRIS Sandbox
-                </a>
+                <div className="mt-4 flex flex-wrap justify-center gap-2">
+                  <button
+                    type="button"
+                    onClick={copyQrUrl}
+                    className="inline-flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-xs font-semibold text-primary"
+                  >
+                    <Copy className="h-4 w-4" />
+                    Salin Link QR
+                  </button>
+                  <a
+                    href="https://simulator.sandbox.midtrans.com/v2/qris/index"
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-2 rounded-full border border-primary px-4 py-2 text-xs font-semibold text-primary"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Simulator QRIS
+                  </a>
+                </div>
               </>
             ) : (
               <div className="flex flex-col items-center gap-2 py-8 text-sm text-muted-foreground">
