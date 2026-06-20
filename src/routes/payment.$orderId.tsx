@@ -6,7 +6,7 @@ import { CustomerHeader } from "@/components/CustomerHeader";
 import { formatRupiah } from "@/lib/format";
 import { Loader2, CheckCircle2, AlertTriangle, Copy, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { createQrisTransaction } from "@/lib/midtrans.functions";
+import { createQrisTransaction, syncMidtransStatus } from "@/lib/midtrans.functions";
 
 export const Route = createFileRoute("/payment/$orderId")({
   component: PaymentPage,
@@ -16,6 +16,7 @@ function PaymentPage() {
   const { orderId } = Route.useParams();
   const navigate = useNavigate();
   const createQris = useServerFn(createQrisTransaction);
+  const syncStatus = useServerFn(syncMidtransStatus);
 
   const [order, setOrder] = useState<any>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
@@ -82,6 +83,7 @@ function PaymentPage() {
   useEffect(() => {
     if (!order || order.payment_status === "dibayar") return;
     const t = setInterval(async () => {
+      try { await syncStatus({ data: { orderId } }); } catch {}
       const { data } = await supabase.rpc("get_public_order", { p_order_id: orderId });
       const o = Array.isArray(data) ? data[0] ?? null : data;
       if (o) {

@@ -76,3 +76,41 @@ export const createQrisTransaction = createServerFn({ method: "POST" })
 
     return { qr_url: qrUrl, midtrans_order_id: shortId, already_paid: false };
   });
+
+export const syncMidtransStatus = createServerFn({ method: "POST" })
+  .inputValidator((d: { orderId: string }) => {
+    if (!d?.orderId || typeof d.orderId !== "string") throw new Error("orderId required");
+    return d;
+  })
+  .handler(async ({ data }) => {
+    const serverKey = process.env.MIDTRANS_SERVER_KEY;
+    if (!serverKey) throw new Error("MIDTRANS_SERVER_KEY not set");
+
+    const { supabaseAdmin } = await import("@/integrations/supabase/client.server");
+
+    const { data: order } = await supabaseAdmin
+      .from("orders")
+      .select("id,midtrans_order_id,payment_status")
+      .eq("id", data.orderId)
+      .maybeSingle();
+    if (!order || !order.midtrans_order_id) return { synced: false };
+    if (order.payment_status === "dibayar") return { synced: true, status: "settlement" };
+
+    const auth = "Basic " + Buffer.from(serverKey + ":").toString("base64");
+    const resp = await fetch(`${MIDTRANS_BASE}/v2/${order.midtrans_order_id}/status`, {
+      method: "GET",
+      headers: { Accept: "application/json", Authorization: auth },
+    });
+    const body = await resp.json();
+    const txStatus = String(body.transaction_status ?? "");
+    const fraudStatus = String(body.fraud_status ?? "accept");
+    if (!txStatus) return { synced: false };
+
+    await supabaseAdmin.rpc("apply_midtrans_status", {
+      p_order_id: order.id,
+      p_transaction_status: txStatus,
+      p_fraud_status: fraudStatus,
+    });
+
+    return { synced: true, status: txStatus };
+  });
