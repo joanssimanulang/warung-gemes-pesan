@@ -16,6 +16,7 @@ function PaymentPage() {
   const { orderId } = Route.useParams();
   const navigate = useNavigate();
   const createQris = useServerFn(createQrisTransaction);
+  const syncStatus = useServerFn(syncMidtransStatus);
 
   const [order, setOrder] = useState<any>(null);
   const [qrUrl, setQrUrl] = useState<string | null>(null);
