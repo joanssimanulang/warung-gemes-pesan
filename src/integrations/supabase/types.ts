@@ -97,6 +97,7 @@ export type Database = {
       }
       orders: {
         Row: {
+          cancellation_reason: string | null
           created_at: string
           customer_name: string
           id: string
@@ -113,6 +114,7 @@ export type Database = {
           whatsapp: string
         }
         Insert: {
+          cancellation_reason?: string | null
           created_at?: string
           customer_name: string
           id?: string
@@ -129,6 +131,7 @@ export type Database = {
           whatsapp: string
         }
         Update: {
+          cancellation_reason?: string | null
           created_at?: string
           customer_name?: string
           id?: string
@@ -292,7 +295,7 @@ export type Database = {
     Enums: {
       app_role: "superadmin" | "admin"
       location_type: "kantin" | "ruangan"
-      order_status: "menunggu" | "diproses" | "selesai"
+      order_status: "menunggu" | "diproses" | "selesai" | "dibatalkan"
       payment_status: "menunggu_pembayaran" | "dibayar" | "gagal"
     }
     CompositeTypes: {
@@ -423,7 +426,7 @@ export const Constants = {
     Enums: {
       app_role: ["superadmin", "admin"],
       location_type: ["kantin", "ruangan"],
-      order_status: ["menunggu", "diproses", "selesai"],
+      order_status: ["menunggu", "diproses", "selesai", "dibatalkan"],
       payment_status: ["menunggu_pembayaran", "dibayar", "gagal"],
     },
   },
