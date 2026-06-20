@@ -6,7 +6,7 @@ import { CustomerHeader } from "@/components/CustomerHeader";
 import { formatRupiah } from "@/lib/format";
 import { Loader2, CheckCircle2, AlertTriangle, Copy, ExternalLink, RefreshCw } from "lucide-react";
 import { toast } from "sonner";
-import { createQrisTransaction } from "@/lib/midtrans.functions";
+import { createQrisTransaction, syncMidtransStatus } from "@/lib/midtrans.functions";
 
 export const Route = createFileRoute("/payment/$orderId")({
   component: PaymentPage,
