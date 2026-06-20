@@ -5,6 +5,7 @@ export const statusLabel = (s: string) => ({
   menunggu: "Menunggu",
   diproses: "Diproses",
   selesai: "Selesai",
+  dibatalkan: "Dibatalkan",
   menunggu_pembayaran: "Menunggu Pembayaran",
   dibayar: "Dibayar",
   gagal: "Gagal",
