@@ -83,6 +83,7 @@ function PaymentPage() {
   useEffect(() => {
     if (!order || order.payment_status === "dibayar") return;
     const t = setInterval(async () => {
+      try { await syncStatus({ data: { orderId } }); } catch {}
       const { data } = await supabase.rpc("get_public_order", { p_order_id: orderId });
       const o = Array.isArray(data) ? data[0] ?? null : data;
       if (o) {
