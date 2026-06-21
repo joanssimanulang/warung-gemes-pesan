@@ -2,7 +2,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { formatRupiah, statusLabel } from "@/lib/format";
-import { ChefHat, CheckCircle2, MessageCircle, Clock, XCircle, Ban } from "lucide-react";
+import { ChefHat, CheckCircle2, MessageCircle, Clock, XCircle, Ban, Copy } from "lucide-react";
 import { toast } from "sonner";
 import {
   Dialog, DialogContent, DialogFooter, DialogHeader, DialogTitle, DialogDescription,
@@ -160,13 +160,18 @@ function normalizeWaPhone(phone: string) {
 }
 
 function buildWaUrl(phone: string, message: string) {
-  const params = new URLSearchParams({
-    phone: normalizeWaPhone(phone),
-    text: message,
-    type: "phone_number",
-    app_absent: "0",
-  });
-  return `https://api.whatsapp.com/send/?${params.toString()}`;
+  const phoneNumber = normalizeWaPhone(phone);
+  const params = new URLSearchParams({ text: message });
+  return `https://wa.me/${phoneNumber}?${params.toString()}`;
+}
+
+async function copyWaMessage(message: string) {
+  try {
+    await navigator.clipboard.writeText(message);
+    toast.success("Pesan WhatsApp disalin");
+  } catch {
+    toast.error("Gagal menyalin pesan");
+  }
 }
 
 function OrderCard({
@@ -235,6 +240,13 @@ function OrderCard({
           >
             <MessageCircle className="h-4 w-4" /> Kirim WA — Pemberitahuan Pembatalan
           </a>
+          <button
+            type="button"
+            onClick={() => copyWaMessage(waCancelMsg)}
+            className="mt-2 flex w-full items-center justify-center gap-2 rounded-full bg-secondary py-2 text-xs font-bold text-secondary-foreground"
+          >
+            <Copy className="h-4 w-4" /> Salin Pesan WA
+          </button>
         </div>
       )}
 
@@ -269,6 +281,13 @@ function OrderCard({
               <MessageCircle className="h-4 w-4" />
               Kirim WA — {isDone ? "Pesanan Selesai" : "Sedang Diproses"}
             </a>
+            <button
+              type="button"
+              onClick={() => copyWaMessage(isDone ? waDoneMsg : waProcessMsg)}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-secondary py-2.5 text-xs font-bold text-secondary-foreground"
+            >
+              <Copy className="h-4 w-4" /> Salin Pesan WA
+            </button>
 
             {isProcessing && (
               <>
