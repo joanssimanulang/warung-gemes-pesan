@@ -170,6 +170,10 @@ function buildWaUrl(phone: string, message: string) {
   return `https://api.whatsapp.com/send/?${params.toString()}`;
 }
 
+function openWaMessage(phone: string, message: string) {
+  window.location.href = buildWaUrl(phone, message);
+}
+
 function OrderCard({
   order, items, onProcess, onComplete, onCancel,
 }: {
@@ -229,13 +233,13 @@ function OrderCard({
         <div className="mt-3 rounded-2xl border border-destructive/30 bg-destructive/10 p-3 text-xs">
           <div className="font-bold text-destructive">Dibatalkan</div>
           <div className="mt-0.5 text-destructive/80">Alasan: {order.cancellation_reason ?? "-"}</div>
-          <a
-            href={buildWaUrl(order.whatsapp, waCancelMsg)}
-            target="_blank" rel="noreferrer"
+          <button
+            type="button"
+            onClick={() => openWaMessage(order.whatsapp, waCancelMsg)}
             className="mt-2 flex items-center justify-center gap-2 rounded-full bg-success py-2 text-xs font-bold text-success-foreground"
           >
             <MessageCircle className="h-4 w-4" /> Kirim WA — Pemberitahuan Pembatalan
-          </a>
+          </button>
         </div>
       )}
 
@@ -262,14 +266,14 @@ function OrderCard({
             <div className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Kirim notifikasi WhatsApp
             </div>
-            <a
-              href={buildWaUrl(order.whatsapp, isDone ? waDoneMsg : waProcessMsg)}
-              target="_blank" rel="noreferrer"
-              className="flex items-center justify-center gap-2 rounded-full bg-success py-2.5 text-xs font-bold text-success-foreground"
+            <button
+              type="button"
+              onClick={() => openWaMessage(order.whatsapp, isDone ? waDoneMsg : waProcessMsg)}
+              className="flex w-full items-center justify-center gap-2 rounded-full bg-success py-2.5 text-xs font-bold text-success-foreground"
             >
               <MessageCircle className="h-4 w-4" />
               Kirim WA — {isDone ? "Pesanan Selesai" : "Sedang Diproses"}
-            </a>
+            </button>
 
             {isProcessing && (
               <>
