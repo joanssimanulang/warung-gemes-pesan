@@ -163,6 +163,8 @@ function buildWaUrl(phone: string, message: string) {
   const params = new URLSearchParams({
     phone: normalizeWaPhone(phone),
     text: message,
+    type: "phone_number",
+    app_absent: "0",
   });
   return `https://api.whatsapp.com/send/?${params.toString()}`;
 }
