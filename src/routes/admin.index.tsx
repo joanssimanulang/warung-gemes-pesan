@@ -151,10 +151,20 @@ function AdminOrdersPage() {
   );
 }
 
+function normalizeWaPhone(phone: string) {
+  const digits = phone.replace(/[^0-9]/g, "");
+  if (digits.startsWith("62")) return digits;
+  if (digits.startsWith("0")) return `62${digits.slice(1)}`;
+  if (digits.startsWith("8")) return `62${digits}`;
+  return digits;
+}
+
 function buildWaUrl(phone: string, message: string) {
-  // api.whatsapp.com is more reliable than wa.me when wa.me is rate-limited/blocked
-  const cleaned = phone.replace(/[^0-9]/g, "").replace(/^0/, "62");
-  return `https://api.whatsapp.com/send?phone=${cleaned}&text=${message}`;
+  const params = new URLSearchParams({
+    phone: normalizeWaPhone(phone),
+    text: message,
+  });
+  return `https://api.whatsapp.com/send/?${params.toString()}`;
 }
 
 function OrderCard({
@@ -172,15 +182,15 @@ function OrderCard({
     : `Meja ${order.table_number ?? "-"}`;
 
   const orderCode = order.id.slice(0, 8).toUpperCase();
-  const waProcessMsg = encodeURIComponent(
+  const waProcessMsg =
     `Halo ${order.customer_name}, pesanan kamu (#${orderCode}) di Warung Mie Kampus sedang kami siapkan. ${order.location_type === "ruangan" ? `Akan diantar ke ${order.rooms?.name ?? "ruangan tujuan"}.` : `Akan segera diantar ke meja ${order.table_number}.`} Terima kasih!`
-  );
-  const waDoneMsg = encodeURIComponent(
+  ;
+  const waDoneMsg =
     `Halo ${order.customer_name}, pesanan kamu (#${orderCode}) sudah selesai. ${order.location_type === "ruangan" ? `Diantar ke ${order.rooms?.name ?? "ruangan tujuan"}.` : `Silakan ambil di meja ${order.table_number}.`} Selamat menikmati!`
-  );
-  const waCancelMsg = encodeURIComponent(
+  ;
+  const waCancelMsg =
     `Halo ${order.customer_name}, mohon maaf pesanan kamu (#${orderCode}) di Warung Mie Kampus terpaksa kami batalkan.\nAlasan: ${order.cancellation_reason ?? "-"}\nJika sudah membayar, dana akan kami kembalikan. Terima kasih atas pengertiannya.`
-  );
+  ;
 
   return (
     <article className="overflow-hidden rounded-3xl border border-border bg-card p-4 shadow-sm">
